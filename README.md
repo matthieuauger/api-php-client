@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/google/google-api-php-client.svg)](https://travis-ci.org/google/google-api-php-client)
-
 # MaResidence API Client Library for PHP #
 
 ## Description ##
