@@ -1,5 +1,5 @@
 {
-    "name": "MaResidence/mr-api-php-client",
+    "name": "ma-residence/mr-api-php-client",
     "type": "library",
     "description": "Client library for ma-residence API",
     "keywords": ["ma-residence, maresidence"],
