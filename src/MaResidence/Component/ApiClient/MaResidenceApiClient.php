@@ -4,7 +4,7 @@ namespace MaResidence\Component\ApiClient;
 
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
-class MaResidenceApiClient
+class Client
 {
     const MR_API_URL = "https://www.ma-residence.fr/api/";
     const MR_OAUTH_TOKEN_KEY = 'mr_api_client.oauth_token';
