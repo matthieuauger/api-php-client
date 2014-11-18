@@ -6,13 +6,6 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class Client
 {
-    const MR_API_URL = "https://www.ma-residence.fr/api/";
-    const MR_OAUTH_TOKEN_KEY = 'mr_api_client.oauth_token';
-    const MR_API_OAUTH_URL_TOKEN = "https://www.ma-residence.fr/oauth/v2/apitoken";
-    const MR_SANDBOX_API_URL = "https://www.preprod.ma-residence.fr/api/";
-    const MR_SANDBOX_OAUTH_TOKEN_KEY = 'mr_sandbox_api_client.oauth_token';
-    const MR_SANDBOX_API_OAUTH_URL_TOKEN = "https://www.preprod.ma-residence.fr/oauth/v2/apitoken";
-
     /**
      * @var \GuzzleHttp\Client
      */
@@ -39,25 +32,39 @@ class Client
     private $password;
 
     /**
-     * @var bool Activate sandbox mode
+     * @var string
      */
-    private $sandbox;
+    private $endpoint;
+
+    /**
+     * @var string
+     */
+    private $token_url;
+
+    /**
+     * @var string
+     */
+    private $session_token_key;
 
     /**
      * @param SessionInterface $session
-     * @param $clientId
-     * @param $clientSecret
-     * @param $username
-     * @param $password
-     * @param $sandbox
+     * @param string           $clientId
+     * @param string           $clientSecret
+     * @param string           $username
+     * @param string           $password
+     * @param string           $endpoint
+     * @param string           $token_url
+     * @param string           $session_token_key
      */
-    public function __construct(SessionInterface $session, $clientId, $clientSecret, $username, $password, $sandbox = false)
+    public function __construct(SessionInterface $session, $clientId, $clientSecret, $username, $password, $endpoint, $token_url, $session_token_key = 'mr_api_client.oauth_token')
     {
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
         $this->username = $username;
         $this->password = $password;
-        $this->sandbox = $sandbox;
+        $this->endpoint = $endpoint;
+        $this->token_url = $token_url;
+        $this->session_token_key = $session_token_key;
         $this->client = new \GuzzleHttp\Client();
     }
 
@@ -68,7 +75,7 @@ class Client
     {
         $token = $this->getToken();
         $token['created_at'] = time();
-        $this->session->set(self::MR_OAUTH_TOKEN_KEY, $token);
+        $this->session->set($this->session_token_key, $token);
     }
 
     /**
@@ -77,11 +84,7 @@ class Client
      */
     public function getToken()
     {
-        $url = self::MR_API_OAUTH_URL_TOKEN;
-
-        if ($this->sandbox) {
-            $url = self::MR_SANDBOX_API_OAUTH_URL_TOKEN;
-        }
+        $url = $this->token_url;
 
         $request = $this->client->createRequest(
             'GET',
@@ -110,11 +113,7 @@ class Client
      */
     public function isAccessTokenExpired()
     {
-        $tokenKey = self::MR_OAUTH_TOKEN_KEY;
-
-        if ($this->sandbox) {
-            $tokenKey = self::MR_SANDBOX_OAUTH_TOKEN_KEY;
-        }
+        $tokenKey = $this->session_token_key;
 
         if (! $this->session->get($tokenKey) || ! is_array($this->session->get($tokenKey))) {
             return true;
@@ -151,13 +150,8 @@ class Client
      */
     public function getNews()
     {
-        $tokenKey = self::MR_OAUTH_TOKEN_KEY;
-        $url = self::MR_API_URL;
-
-        if ($this->sandbox) {
-            $tokenKey = self::MR_SANDBOX_OAUTH_TOKEN_KEY;
-            $url = self::MR_SANDBOX_API_URL;
-        }
+        $tokenKey = $this->session_token_key;
+        $url = $this->endpoint;
 
         $token = $this->session->get($tokenKey);
 
