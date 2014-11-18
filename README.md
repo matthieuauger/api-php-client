@@ -18,6 +18,10 @@ See the examples/ directory for examples of the key client features.
 
   $client = new Client(SessionInterface $session, $clientId, $clientSecret, $username, $password, 'https://www.ma-residence.fr/api/', 'https://www.ma-residence.fr/oauth/v2/apitoken');
 
+  if ($client->isAccessTokenExpired()) {
+    $client->authenticate();
+  }
+
   $client->getNews();
   
 ```

@@ -155,13 +155,25 @@ class Client
         return ($token['created_at'] + ($token['expires_in'] - 30)) < time();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getNews()
     {
+        return $this->getResource('news');
+    }
+
+    public function getAdverts()
+    {
+        return $this->getResource('adverts');
+    }
+
+    /**
+     * @param $resource
+     *
+     * @return mixed
+     */
+    private function getResource($resource)
+    {
         $tokenKey = $this->session_token_key;
-        $url = sprintf('%s/%s', $this->endpoint, 'news');
+        $url = sprintf('%s/%s', $this->endpoint, $resource);
 
         $token = $this->session->get($tokenKey);
 
@@ -174,14 +186,14 @@ class Client
         $response = $this->client->get($url, $options);
 
         if (200 !== $response->getStatusCode()) {
-            throw new \LogicException('An error occurred when trying to GET News from MR API');
+            throw new \LogicException('An error occurred when trying to GET data from MR API');
         }
 
-        $news = $response->json();
-        if (!is_array($news) || !isset($news['request']) || !is_array($news['news'])) {
-            return [];
+        $jsonData = $response->json();
+        if (!is_array($jsonData) || !isset($jsonData['request']) || !is_array($jsonData[$resource])) {
+            throw new \LogicException('The response providing from MR API is not valid');
         }
 
-        return $news;
+        return $jsonData;
     }
 }
