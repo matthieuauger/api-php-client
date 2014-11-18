@@ -82,6 +82,13 @@ class Client
     {
         $token = $this->getToken();
         $token['created_at'] = time();
+
+        $this->setToken($token);
+
+    }
+
+    public function setToken($token)
+    {
         $this->session->set($this->session_token_key, $token);
     }
 
@@ -91,24 +98,20 @@ class Client
      */
     public function getToken()
     {
-        $url = $this->token_url;
-
-        $request = $this->client->createRequest(
-            'GET',
-            $url,
-            [
+        $options = [
+            'query' => [
                 'client_id' => $this->clientId,
                 'client_secret' => $this->clientSecret,
                 'grant_type' => 'password',
                 'username' => $this->username,
                 'password' => $this->password,
             ]
-        );
+        ];
 
-        $response = $request->send();
+        $response = $this->client->get($this->token_url, $options);
 
         if (200 !== $response->getStatusCode()) {
-            throw new \LogicException('An error occurred when trying to GET data to MR API');
+            throw new \LogicException('An error occurred when trying to GET token data from MR API');
         }
 
         return $response->json();
@@ -158,12 +161,17 @@ class Client
     public function getNews()
     {
         $tokenKey = $this->session_token_key;
-        $url = $this->endpoint;
+        $url = sprintf('%s/%s', $this->endpoint, 'news');
 
         $token = $this->session->get($tokenKey);
 
-        $request = $this->client->get($url.'/news?access_token='.$token['access_token']);
-        $response = $request->send();
+        $options = [
+            'query' => [
+                'access_token' => $token['access_token'],
+            ]
+        ];
+
+        $response = $this->client->get($url, $options);
 
         if (200 !== $response->getStatusCode()) {
             throw new \LogicException('An error occurred when trying to GET News from MR API');
