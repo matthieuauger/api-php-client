@@ -3,11 +3,17 @@
 namespace MaResidence\Component\ApiClient;
 
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use GuzzleHttp\Client as GuzzleClient;
 
 class Client
 {
     /**
-     * @var \GuzzleHttp\Client
+     * @var SessionInterface
+     */
+    private $session;
+
+    /**
+     * @var GuzzleClient
      */
     private $client;
 
@@ -58,6 +64,7 @@ class Client
      */
     public function __construct(SessionInterface $session, $clientId, $clientSecret, $username, $password, $endpoint, $token_url, $session_token_key = 'mr_api_client.oauth_token')
     {
+        $this->session = $session;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
         $this->username = $username;
@@ -65,7 +72,7 @@ class Client
         $this->endpoint = $endpoint;
         $this->token_url = $token_url;
         $this->session_token_key = $session_token_key;
-        $this->client = new \GuzzleHttp\Client();
+        $this->client = new GuzzleClient();
     }
 
     /**
