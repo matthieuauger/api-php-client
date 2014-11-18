@@ -139,10 +139,6 @@ class Client
             return true;
         }
 
-        if (!isset($token['scope'])) {
-            return true;
-        }
-
         if (!isset($token['access_token'])) {
             return true;
         }
