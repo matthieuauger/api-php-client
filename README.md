@@ -11,18 +11,17 @@ See `composer.json` file.
 
 ## Basic Example ##
 See the examples/ directory for examples of the key client features.
-```
+```PHP
+<?php
+use Symfony\Component\HttpFoundation\Session\Session;
+use MaResidence\Component\ApiClient\Client;
 
-    <?php
-    use Symfony\Component\HttpFoundation\Session\Session;
-    use MaResidence\Component\ApiClient\Client;
+$client = new Client(SessionInterface $session, $clientId, $clientSecret, $username, $password, 'https://www.ma-residence.fr/api/', 'https://www.ma-residence.fr/oauth/v2/apitoken');
 
-    $client = new Client(SessionInterface $session, $clientId, $clientSecret, $username, $password, 'https://www.ma-residence.fr/api/', 'https://www.ma-residence.fr/oauth/v2/apitoken');
+if ($client->isAccessTokenExpired()) {
+    $client->authenticate();
+}
 
-    if ($client->isAccessTokenExpired()) {
-        $client->authenticate();
-    }
-
-    $client->getNews();
+$client->getNews();
   
 ```
