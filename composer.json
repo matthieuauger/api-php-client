@@ -15,7 +15,7 @@
     },
     "autoload": {
         "psr-4": {
-            "MaResidence\\Component\\ApiClient\\":"src/"
+            "MaResidence\\Component\\ApiClient\\":"src/MaResidence/Component/ApiClient"
         }
     },
     "extra": {
