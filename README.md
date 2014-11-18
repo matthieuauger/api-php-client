@@ -11,7 +11,8 @@ See `composer.json` file.
 
 ## Basic Example ##
 See the examples/ directory for examples of the key client features.
-```PHP
+```
+
     <?php
     use Symfony\Component\HttpFoundation\Session\Session;
     use MaResidence\Component\ApiClient\Client;
