@@ -247,9 +247,22 @@ class Client
     {
         $tokenKey = $this->session_token_key;
         $token = $this->session->get($tokenKey);
-        $options['query'] = ['access_token' => $token['access_token']];
 
-        $response = $this->client->get($url, $options);
+        $requestOptions = [];
+
+        foreach ($options as $key => $value) {
+            if ($key != 'version' && $key != 'access_token') {
+                $requestOptions['query'][$key] = $token['access_token'];
+            }
+        }
+
+        if (array_key_exists('version', $options)) {
+            $requestOptions['headers']['HTTP_ACCEPT'] = sprintf('application/ma-residence.v%d', $options['version']);
+        }
+
+        $requestOptions['query']['access_token'] = $token['access_token'];
+
+        $response = $this->client->get($url, $requestOptions);
 
         if (200 !== $response->getStatusCode()) {
             throw new \LogicException('An error occurred when trying to GET data from MR API');
