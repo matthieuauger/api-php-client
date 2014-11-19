@@ -4,6 +4,9 @@ namespace MaResidence\Component\ApiClient;
 
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\ClientException;
+use MaResidence\Component\ApiClient\Exception\BadRequestException;
+use MaResidence\Component\ApiClient\Exception\InvalidClientException;
 
 class Client
 {
@@ -72,7 +75,7 @@ class Client
         $this->endpoint = $endpoint;
         $this->token_url = $token_url;
         $this->session_token_key = $session_token_key;
-        $this->client = new GuzzleClient();
+        $this->client = new GuzzleClient(['base_url' => $endpoint]);
     }
 
     /**
@@ -108,10 +111,23 @@ class Client
             ]
         ];
 
-        $response = $this->client->get($this->token_url, $options);
+        try {
+            $response = $this->client->get($this->token_url, $options);
+        } catch (ClientException $e) {
+            $response = $e->getResponse();
+            $body = $response->json();
+
+            if (array_key_exists('error', $body) && $body['error'] == 'invalid_client') {
+                $message = array_key_exists('error_description', $body) ? $body['error_description'] : 'Error description not available';
+
+                throw new InvalidClientException($message, $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl(), $body);
+            }
+
+            throw new BadRequestException($e->getMessage(), $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl(), $body);
+        }
 
         if (200 !== $response->getStatusCode()) {
-            throw new \LogicException('An error occurred when trying to GET token data from MR API');
+            throw new BadRequestException('An error occurred when trying to GET token data from MR API', $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl());
         }
 
         return $response->json();
@@ -151,14 +167,14 @@ class Client
         return ($token['created_at'] + ($token['expires_in'] - 30)) < time();
     }
 
-    public function getNews()
+    public function getNews(array $options = [])
     {
-        return $this->getResource('news');
+        return $this->getResource('news', $options);
     }
 
-    public function getAdverts()
+    public function getAdverts(array $options = [])
     {
-        return $this->getResource('adverts');
+        return $this->getResource('adverts', $options);
     }
 
     /**
@@ -166,10 +182,10 @@ class Client
      *
      * @return mixed
      */
-    private function getResource($resource)
+    private function getResource($resource, array $options = [])
     {
         $tokenKey = $this->session_token_key;
-        $url = sprintf('%s/%s', $this->endpoint, $resource);
+        $url = sprintf('/api/%s', $resource);
 
         $token = $this->session->get($tokenKey);
 
