@@ -123,6 +123,12 @@ class Client
                 throw new InvalidClientException($message, $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl(), $body);
             }
 
+            if (array_key_exists('error', $body) && $body['error'] == 'unauthorized_client') {
+                $message = array_key_exists('error_description', $body) ? $body['error_description'] : 'Error description not available';
+
+                throw new UnauthorizedClientException($message, $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl(), $body);
+            }
+
             throw new BadRequestException($e->getMessage(), $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl(), $body);
         }
 
