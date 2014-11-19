@@ -176,31 +176,78 @@ class Client
 
     public function getNews(array $options = [])
     {
-        return $this->getResource('news', $options);
+        return $this->getResources('news', $options);
+    }
+
+    public function getNewsById($id, array $options = [])
+    {
+        return $this->getResourceByid('news', $id, $options);
     }
 
     public function getAdverts(array $options = [])
     {
-        return $this->getResource('adverts', $options);
+        return $this->getResources('adverts', $options);
+    }
+
+    public function getAdvertById($id, array $options = [])
+    {
+        return $this->getResourceByid('adverts', $id, $options);
+    }
+
+    public function getEvents(array $options = [])
+    {
+        return $this->getResources('events', $options);
+    }
+
+    public function getEventById($id, array $options = [])
+    {
+        return $this->getResourceByid('events', $id, $options);
+    }
+
+    public function getUserById($id, array $options = [])
+    {
+        return $this->getResourceByid('users', $id, $options);
     }
 
     /**
      * @param $resource
+     * @param array $options
      *
      * @return mixed
      */
-    private function getResource($resource, array $options = [])
+    private function getResources($resource, array $options = [])
     {
-        $tokenKey = $this->session_token_key;
         $url = sprintf('/api/%s', $resource);
 
-        $token = $this->session->get($tokenKey);
+        return $this->get($resource, $url, $options);
+    }
 
-        $options = [
-            'query' => [
-                'access_token' => $token['access_token'],
-            ]
-        ];
+    /**
+     * @param $resource
+     * @param $id
+     * @param array $options
+     *
+     * @return mixed
+     */
+    private function getResourceByid($resource, $id, array $options = [])
+    {
+        $url = sprintf('/api/%s/%s', $resource, $id);
+
+        return $this->get($resource, $url, $options);
+    }
+
+    /**
+     * @param $resource
+     * @param $url
+     * @param array $options
+     *
+     * @return mixed
+     */
+    private function get($resource, $url, array $options = [])
+    {
+        $tokenKey = $this->session_token_key;
+        $token = $this->session->get($tokenKey);
+        $options['query'] = ['access_token' => $token['access_token']];
 
         $response = $this->client->get($url, $options);
 
