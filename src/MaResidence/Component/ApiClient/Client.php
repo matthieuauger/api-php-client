@@ -252,7 +252,7 @@ class Client
 
         foreach ($options as $key => $value) {
             if ($key != 'version' && $key != 'access_token') {
-                $requestOptions['query'][$key] = $token['access_token'];
+                $requestOptions['query'][$key] = $value;
             }
         }
 
