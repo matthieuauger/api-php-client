@@ -7,6 +7,7 @@ use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\ClientException;
 use MaResidence\Component\ApiClient\Exception\BadRequestException;
 use MaResidence\Component\ApiClient\Exception\InvalidClientException;
+use MaResidence\Component\ApiClient\Exception\UnauthorizedClientException;
 
 class Client
 {
