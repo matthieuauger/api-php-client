@@ -269,7 +269,7 @@ class Client
         }
 
         $jsonData = $response->json();
-        if (!is_array($jsonData) || !isset($jsonData['request']) || !is_array($jsonData[$resource])) {
+        if (!is_array($jsonData) || !is_array($jsonData[$resource])) {
             throw new \LogicException('The response providing from MR API is not valid');
         }
 
