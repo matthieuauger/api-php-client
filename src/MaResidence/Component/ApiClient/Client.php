@@ -241,7 +241,7 @@ class Client
      * @param $url
      * @param array $options
      *
-     * @return mixed
+     * @return array
      */
     private function get($resource, $url, array $options = [])
     {
@@ -268,11 +268,11 @@ class Client
             throw new \LogicException('An error occurred when trying to GET data from MR API');
         }
 
-        $jsonData = $response->json();
-        if (!is_array($jsonData) || !is_array($jsonData[$resource])) {
+        $data = $response->json();
+        if (!is_array($data)) {
             throw new \LogicException('The response providing from MR API is not valid');
         }
 
-        return $jsonData;
+        return $data;
     }
 }
