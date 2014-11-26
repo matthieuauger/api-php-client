@@ -194,6 +194,16 @@ class Client
         return $this->getResourceByid('adverts', $id, $options);
     }
 
+    public function getAdvertCategories(array $options = [])
+    {
+        return $this->getResources('advertcategories', $options);
+    }
+
+    public function getAdvertCategoryById($id, array $options = [])
+    {
+        return $this->getResourceByid('advertcategories', $id, $options);
+    }
+
     public function getEvents(array $options = [])
     {
         return $this->getResources('events', $options);
