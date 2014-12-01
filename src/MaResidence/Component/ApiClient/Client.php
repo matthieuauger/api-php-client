@@ -219,6 +219,11 @@ class Client
         return $this->getResourceByid('users', $id, $options);
     }
 
+    public function getAssociationById($id, array $options = [])
+    {
+        return $this->getResourceByid('associations', $id, $options);
+    }
+
     /**
      * @param $resource
      * @param array $options
