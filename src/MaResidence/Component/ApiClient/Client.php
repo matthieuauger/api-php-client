@@ -91,14 +91,19 @@ class Client
 
     }
 
+    /**
+     * @param $token
+     */
     public function setToken($token)
     {
         $this->session->set($this->session_token_key, $token);
     }
 
     /**
-     * @return array|bool|float|int|string
-     * @throws \LogicException
+     * @return mixed
+     * @throws BadRequestException
+     * @throws InvalidClientException
+     * @throws UnauthorizedClientException
      */
     public function getToken()
     {
@@ -174,59 +179,120 @@ class Client
         return ($token['created_at'] + ($token['expires_in'] - 30)) < time();
     }
 
+    /**
+     * @param array $options
+     *
+     * @return mixed
+     */
     public function getNews(array $options = [])
     {
         return $this->getResources('news', $options);
     }
 
+    /**
+     * @param $id
+     * @param array $options
+     *
+     * @return mixed
+     */
     public function getNewsById($id, array $options = [])
     {
-        return $this->getResourceByid('news', $id, $options);
+        return $this->getResourceById('news', $id, $options);
     }
 
+    /**
+     * @param array $options
+     *
+     * @return mixed
+     */
     public function getAdverts(array $options = [])
     {
         return $this->getResources('adverts', $options);
     }
 
+    /**
+     * @param $id
+     * @param array $options
+     *
+     * @return mixed
+     */
     public function getAdvertById($id, array $options = [])
     {
-        return $this->getResourceByid('adverts', $id, $options);
+        return $this->getResourceById('adverts', $id, $options);
     }
 
+    /**
+     * @param array $options
+     *
+     * @return mixed
+     */
     public function getAdvertCategories(array $options = [])
     {
         return $this->getResources('advertcategories', $options);
     }
 
+    /**
+     * @param $id
+     * @param array $options
+     *
+     * @return mixed
+     */
     public function getAdvertCategoryById($id, array $options = [])
     {
-        return $this->getResourceByid('advertcategories', $id, $options);
+        return $this->getResourceById('advertcategories', $id, $options);
     }
 
+    /**
+     * @param array $options
+     *
+     * @return mixed
+     */
     public function getEvents(array $options = [])
     {
         return $this->getResources('events', $options);
     }
 
+    /**
+     * @param $id
+     * @param array $options
+     *
+     * @return mixed
+     */
     public function getEventById($id, array $options = [])
     {
-        return $this->getResourceByid('events', $id, $options);
+        return $this->getResourceById('events', $id, $options);
     }
 
+    /**
+     * @param $id
+     * @param array $options
+     *
+     * @return mixed
+     */
     public function getUserById($id, array $options = [])
     {
-        return $this->getResourceByid('users', $id, $options);
+        return $this->getResourceById('users', $id, $options);
     }
 
+    /**
+     * @param array $options
+     *
+     * @return mixed
+     */
     public function getAssociations(array $options = [])
     {
         return $this->getResources('associations', $options);
     }
 
+    /**
+     * @param $id
+     * @param array $options
+     *
+     * @return mixed
+     */
     public function getAssociationById($id, array $options = [])
     {
-        return $this->getResourceByid('associations', $id, $options);
+        return $this->getResourceById('associations', $id, $options);
     }
 
     /**
@@ -239,7 +305,7 @@ class Client
     {
         $url = sprintf('/api/%s', $resource);
 
-        return $this->get($resource, $url, $options);
+        return $this->get($url, $options);
     }
 
     /**
@@ -249,21 +315,20 @@ class Client
      *
      * @return mixed
      */
-    private function getResourceByid($resource, $id, array $options = [])
+    private function getResourceById($resource, $id, array $options = [])
     {
         $url = sprintf('/api/%s/%s', $resource, $id);
 
-        return $this->get($resource, $url, $options);
+        return $this->get($url, $options);
     }
 
     /**
-     * @param $resource
      * @param $url
      * @param array $options
      *
      * @return array
      */
-    private function get($resource, $url, array $options = [])
+    private function get($url, array $options = [])
     {
         $tokenKey = $this->session_token_key;
         $token = $this->session->get($tokenKey);
