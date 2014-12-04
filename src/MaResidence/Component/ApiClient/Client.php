@@ -296,6 +296,27 @@ class Client
     }
 
     /**
+     * @param array $options
+     *
+     * @return mixed
+     */
+    public function getShops(array $options = [])
+    {
+        return $this->getResources('shops', $options);
+    }
+
+    /**
+     * @param $id
+     * @param array $options
+     *
+     * @return mixed
+     */
+    public function getShopById($id, array $options = [])
+    {
+        return $this->getResourceById('shops', $id, $options);
+    }
+
+    /**
      * @param $resource
      * @param array $options
      *
