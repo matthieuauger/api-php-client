@@ -180,6 +180,21 @@ class Client
     }
 
     /**
+     * @return mixed
+     */
+    public function getAccessToken()
+    {
+        $tokenKey = $this->session_token_key;
+        $token = $this->session->get($tokenKey);
+
+        if (null === $token['access_token']) {
+            throw new \LogicException('There is no access token');
+        }
+
+        return $token['access_token'];
+    }
+
+    /**
      * @param array $options
      *
      * @return mixed
@@ -261,6 +276,16 @@ class Client
     public function getEventById($id, array $options = [])
     {
         return $this->getResourceById('events', $id, $options);
+    }
+
+    /**
+     * @param array $options
+     *
+     * @return mixed
+     */
+    public function postUser(array $options = [])
+    {
+        return $this->post('/api/users', ['user' => $options]);
     }
 
     /**
@@ -380,5 +405,44 @@ class Client
         }
 
         return $data;
+    }
+
+    /**
+     * @param $url
+     * @param array $options
+     *
+     * @return array
+     */
+    private function post($url, array $options = [], $bodyEncoding = 'json')
+    {
+        $tokenKey = $this->session_token_key;
+        $token = $this->session->get($tokenKey);
+
+        $requestOptions = [];
+
+        foreach ($options as $key => $value) {
+            if ($key != 'version' && $key != 'access_token') {
+                $requestOptions['body'][$key] = $value;
+            }
+        }
+
+        // Encode the body to be fully compatible with REST
+        if ('json' == $bodyEncoding) {
+            $requestOptions['body'] = json_encode($requestOptions['body']);
+        }
+
+        if (array_key_exists('version', $options)) {
+            $requestOptions['headers']['HTTP_ACCEPT'] = sprintf('application/ma-residence.v%d', $options['version']);
+        }
+
+        $requestOptions['query']['access_token'] = $token['access_token'];
+
+        $response = $this->client->post($url,  $requestOptions);
+
+        if (201 !== $response->getStatusCode()) {
+            throw new \LogicException('An error occurred when trying to POST data to MR API');
+        }
+
+        return true;
     }
 }
