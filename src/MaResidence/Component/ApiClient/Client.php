@@ -388,7 +388,7 @@ class Client
         }
 
         if (array_key_exists('version', $options)) {
-            $requestOptions['headers']['HTTP_ACCEPT'] = sprintf('application/ma-residence.v%d', $options['version']);
+            $requestOptions['headers']['Accept'] = sprintf('application/ma-residence.v%d', $options['version']);
         }
 
         $requestOptions['query']['access_token'] = $token['access_token'];
@@ -432,7 +432,7 @@ class Client
         }
 
         if (array_key_exists('version', $options)) {
-            $requestOptions['headers']['HTTP_ACCEPT'] = sprintf('application/ma-residence.v%d', $options['version']);
+            $requestOptions['headers']['Accept'] = sprintf('application/ma-residence.v%d', $options['version']);
         }
 
         $requestOptions['query']['access_token'] = $token['access_token'];
