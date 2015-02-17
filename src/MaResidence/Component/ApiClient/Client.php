@@ -180,6 +180,14 @@ class Client
     }
 
     /**
+     * @return string
+     */
+    public function getClientId()
+    {
+        return $this->clientId;
+    }
+
+    /**
      * @return mixed
      */
     public function getAccessToken()
@@ -437,7 +445,7 @@ class Client
 
         $requestOptions['query']['access_token'] = $token['access_token'];
 
-        $response = $this->client->post($url,  $requestOptions);
+        $response = $this->client->post($url, $requestOptions);
 
         if (201 !== $response->getStatusCode()) {
             throw new \LogicException('An error occurred when trying to POST data to MR API');
