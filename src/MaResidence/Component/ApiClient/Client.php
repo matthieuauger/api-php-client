@@ -293,7 +293,49 @@ class Client
      */
     public function postUser(array $options = [])
     {
-        return $this->post('/api/users', ['user' => $options]);
+        $response = $this->post('/api/users', ['user' => $options]);
+
+        $body = $response->getBody();
+
+        if (! is_array($body) || ! array_key_exists('user', $body)) {
+            throw new \LogicException(
+                'The User was successfully created but an unexpected response was return from the MR API'
+            );
+        }
+
+        if (! is_array($body['user']) || ! array_key_exists('id', $body) || ! array_key_exists('self', $body)) {
+            throw new \LogicException(
+                'The User was successfully created but an unexpected response was return from the MR API. Expected key id and self.'
+            );
+        }
+
+        return $body['user'];
+    }
+
+    /**
+     * @param array $options
+     *
+     * @return mixed
+     */
+    public function postAdvert(array $options = [])
+    {
+        $response = $this->post('/api/adverts', ['advert' => $options]);
+
+        $body = $response->getBody();
+
+        if (! is_array($body) || ! array_key_exists('advert', $body)) {
+            throw new \LogicException(
+                'The Advert was successfully created but an unexpected response was return from the MR API'
+            );
+        }
+
+        if (! is_array($body['advert']) || ! array_key_exists('id', $body) || ! array_key_exists('self', $body)) {
+            throw new \LogicException(
+                'The Advert was successfully created but an unexpected response was return from the MR API. Expected key id and self.'
+            );
+        }
+
+        return $body['advert'];
     }
 
     /**
@@ -451,6 +493,6 @@ class Client
             throw new \LogicException('An error occurred when trying to POST data to MR API');
         }
 
-        return true;
+        return $response;
     }
 }
