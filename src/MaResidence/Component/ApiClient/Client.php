@@ -291,11 +291,19 @@ class Client
      *
      * @return mixed
      */
-    public function postUser(array $options = [])
-    {
-        $response = $this->post('/api/users', ['user' => $options]);
 
-        $body = $response->getBody();
+    /**
+     * @param array $userData
+     * @param       $version
+     *
+     * @return array
+     */
+    public function postUser(array $userData, $version)
+    {
+        $data['user'] = $userData;
+        $response = $this->post('/api/users', $version, $data);
+
+        $body = $response->json();
 
         if (! is_array($body) || ! array_key_exists('user', $body)) {
             throw new \LogicException(
@@ -303,7 +311,9 @@ class Client
             );
         }
 
-        if (! is_array($body['user']) || ! array_key_exists('id', $body) || ! array_key_exists('self', $body)) {
+        $user = $body['user'];
+
+        if (! is_array($user) || ! array_key_exists('id', $user) || ! array_key_exists('self', $user)) {
             throw new \LogicException(
                 'The User was successfully created but an unexpected response was return from the MR API. Expected key id and self.'
             );
@@ -313,15 +323,17 @@ class Client
     }
 
     /**
-     * @param array $options
+     * @param array $advertData
+     * @param       $version
      *
      * @return mixed
      */
-    public function postAdvert(array $options = [])
+    public function postAdvert(array $advertData, $version)
     {
-        $response = $this->post('/api/adverts', ['advert' => $options]);
+        $data['advert'] = $advertData;
+        $response = $this->post('/api/adverts', $version, $data);
 
-        $body = $response->getBody();
+        $body = $response->json();
 
         if (! is_array($body) || ! array_key_exists('advert', $body)) {
             throw new \LogicException(
@@ -329,7 +341,9 @@ class Client
             );
         }
 
-        if (! is_array($body['advert']) || ! array_key_exists('id', $body) || ! array_key_exists('self', $body)) {
+        $advert = $body['advert'];
+
+        if (! is_array($advert) || ! array_key_exists('id', $advert) || ! array_key_exists('self', $advert)) {
             throw new \LogicException(
                 'The Advert was successfully created but an unexpected response was return from the MR API. Expected key id and self.'
             );
@@ -459,21 +473,21 @@ class Client
 
     /**
      * @param $url
-     * @param array $options
+     * @param $version
+     * @param array $data
+     * @param string $bodyEncoding
      *
-     * @return array
+     * @return \GuzzleHttp\Message\FutureResponse|\GuzzleHttp\Message\ResponseInterface|\GuzzleHttp\Ring\Future\FutureInterface|null
      */
-    private function post($url, array $options = [], $bodyEncoding = 'json')
+    private function post($url, $version, array $data = [], $bodyEncoding = 'json')
     {
         $tokenKey = $this->session_token_key;
         $token = $this->session->get($tokenKey);
 
         $requestOptions = [];
 
-        foreach ($options as $key => $value) {
-            if ($key != 'version' && $key != 'access_token') {
-                $requestOptions['body'][$key] = $value;
-            }
+        foreach ($data as $key => $value) {
+            $requestOptions['body'][$key] = $value;
         }
 
         // Encode the body to be fully compatible with REST
@@ -481,9 +495,7 @@ class Client
             $requestOptions['body'] = json_encode($requestOptions['body']);
         }
 
-        if (array_key_exists('version', $options)) {
-            $requestOptions['headers']['Accept'] = sprintf('application/ma-residence.v%d', $options['version']);
-        }
+        $requestOptions['headers']['Accept'] = sprintf('application/ma-residence.v%d', $version);
 
         $requestOptions['query']['access_token'] = $token['access_token'];
 
