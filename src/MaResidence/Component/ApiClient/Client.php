@@ -287,6 +287,17 @@ class Client
     }
 
     /**
+     * @param $id
+     * @param array $options
+     *
+     * @return mixed
+     */
+    public function getRecommendationById($id, array $options = [])
+    {
+        return $this->getResourceById('recommendations', $id, $options);
+    }
+
+    /**
      * @param array $options
      *
      * @return mixed
@@ -350,6 +361,36 @@ class Client
         }
 
         return $body['advert'];
+    }
+
+    /**
+     * @param array $recommendationData
+     * @param       $version
+     *
+     * @return mixed
+     */
+    public function postRecommendation(array $recommendationData, $version)
+    {
+        $data['recommendation'] = $recommendationData;
+        $response = $this->post('/api/recommendations', $version, $data);
+
+        $body = $response->json();
+
+        if (! is_array($body) || ! array_key_exists('recommendation', $body)) {
+            throw new \LogicException(
+                'The Recommendation was successfully created but an unexpected response was return from the MR API'
+            );
+        }
+
+        $recommendation = $body['recommendation'];
+
+        if (! is_array($recommendation) || ! array_key_exists('id', $recommendation) || ! array_key_exists('self', $recommendation)) {
+            throw new \LogicException(
+                'The Recommendation was successfully created but an unexpected response was return from the MR API. Expected key id and self.'
+            );
+        }
+
+        return $body['recommendation'];
     }
 
     /**
