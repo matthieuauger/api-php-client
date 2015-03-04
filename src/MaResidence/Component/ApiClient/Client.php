@@ -394,6 +394,39 @@ class Client
     }
 
     /**
+     * @param string $id ID of the advert to share
+     * @param array $shareData
+     * @param       $version
+     *
+     * @return mixed
+     */
+    public function postAdvertShare($id, array $shareData, $version)
+    {
+        $data['share'] = $shareData;
+        $url = sprintf('/api/adverts/%s/shares', $id);
+
+        $response = $this->post($url, $version, $data);
+
+        $body = $response->json();
+
+        if (! is_array($body) || ! array_key_exists('share', $body)) {
+            throw new \LogicException(
+                'The Share was successfully created but an unexpected response was return from the MR API'
+            );
+        }
+
+        $share = $body['share'];
+
+        if (! is_array($share) || ! array_key_exists('email', $share)) {
+            throw new \LogicException(
+                'The Share was successfully created but an unexpected response was return from the MR API. Expected key email.'
+            );
+        }
+
+        return $body['share'];
+    }
+
+    /**
      * @param $id
      * @param array $options
      *
