@@ -575,7 +575,7 @@ class Client
 
         $response = $this->client->post($url, $requestOptions);
 
-        if (201 !== $response->getStatusCode()) {
+        if (! in_array($response->getStatusCode(), [201, 409])) {
             throw new \LogicException('An error occurred when trying to POST data to MR API');
         }
 
