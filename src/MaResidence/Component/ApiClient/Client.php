@@ -2,7 +2,7 @@
 
 namespace MaResidence\Component\ApiClient;
 
-use Symfony\Component\HttpFoundation\tokenStorage\tokenStorageInterface;
+use MaResidence\Component\ApiClient\TokenStorageInterface;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\ClientException;
 use MaResidence\Component\ApiClient\Exception\BadRequestException;
@@ -113,7 +113,7 @@ class Client
         ];
 
         try {
-            $response = $this->client->get($this->token_url, $options);
+            $response = $this->client->get($this->tokenUrl, $options);
         } catch (BadRequestException $e) {
             $response = $e->getResponse();
             $body = $response->json();
