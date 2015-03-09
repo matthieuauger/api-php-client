@@ -14,13 +14,10 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testIsAccessTokenExpired()
     {
-        //$this->markTestIncomplete('This test has not been implemented yet.');
+        $tokenStorage = Phake::mock('MaResidence\Component\ApiClient\TokenStorageInterface');
+        Phake::when($tokenStorage)->get("mr_api_client.oauth_token")->thenReturn("WTF");
 
-        $session = Phake::mock('Symfony\Component\HttpFoundation\Session\SessionInterface');
-        Phake::when($session)->get("mr_api_client.oauth_token")->thenReturn("WTF");
-
-        $client = new Client($session, '', '', '', '', '', '', "mr_api_client.oauth_token");
+        $client = new Client($tokenStorage, '', '', '', '', '', '');
         $this->assertTrue($client->isAccessTokenExpired());
-
     }
 }
