@@ -5,6 +5,7 @@ namespace MaResidence\Component\ApiClient;
 use MaResidence\Component\ApiClient\TokenStorageInterface;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\RequestException;
 use MaResidence\Component\ApiClient\Exception\BadRequestException;
 use MaResidence\Component\ApiClient\Exception\InvalidClientException;
 use MaResidence\Component\ApiClient\Exception\UnauthorizedClientException;
@@ -276,9 +277,16 @@ class Client
     public function postUser(array $userData, $version)
     {
         $data['user'] = $userData;
-        $response = $this->post('/api/users', $version, $data);
 
-        $body = $response->json();
+        try {
+            $response = $this->post('/api/users', $version, $data);
+            $body = $response->json();
+        } catch (RequestException $e) {
+            // If user already exists
+            if ($e->getCode() == 409 && null !== $e->getResponse()) {
+                $body = $e->getResponse()->json();
+            }
+        }
 
         if (! is_array($body) || ! array_key_exists('user', $body)) {
             throw new \LogicException(
@@ -537,7 +545,7 @@ class Client
 
         $response = $this->client->post($url, $requestOptions);
 
-        if (! in_array($response->getStatusCode(), [201, 409])) {
+        if (201 !== $response->getStatusCode()) {
             throw new \LogicException('An error occurred when trying to POST data to MR API');
         }
 
