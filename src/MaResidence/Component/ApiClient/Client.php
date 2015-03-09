@@ -2,7 +2,7 @@
 
 namespace MaResidence\Component\ApiClient;
 
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\tokenStorage\tokenStorageInterface;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\ClientException;
 use MaResidence\Component\ApiClient\Exception\BadRequestException;
@@ -12,9 +12,9 @@ use MaResidence\Component\ApiClient\Exception\UnauthorizedClientException;
 class Client
 {
     /**
-     * @var SessionInterface
+     * @var TokenStorageInterface
      */
-    private $session;
+    private $tokenStorage;
 
     /**
      * @var GuzzleClient
@@ -49,54 +49,49 @@ class Client
     /**
      * @var string
      */
-    private $token_url;
+    private $tokenUrl;
 
     /**
-     * @var string
-     */
-    private $session_token_key;
-
-    /**
-     * @param SessionInterface $session
+     * @param TokenStorageInterface $tokenStorage
      * @param string           $clientId
      * @param string           $clientSecret
      * @param string           $username
      * @param string           $password
      * @param string           $endpoint
-     * @param string           $token_url
-     * @param string           $session_token_key
+     * @param string           $tokenUrl
      */
-    public function __construct(SessionInterface $session, $clientId, $clientSecret, $username, $password, $endpoint, $token_url, $session_token_key = 'mr_api_client.oauth_token')
+    public function __construct(TokenStorageInterface $tokenStorage, $clientId, $clientSecret, $username, $password, $endpoint, $tokenUrl)
     {
-        $this->session = $session;
+        $this->tokenStorage = $tokenStorage;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
         $this->username = $username;
         $this->password = $password;
         $this->endpoint = $endpoint;
-        $this->token_url = $token_url;
-        $this->session_token_key = $session_token_key;
+        $this->tokenUrl = $tokenUrl;
         $this->client = new GuzzleClient(['base_url' => $endpoint]);
     }
 
     /**
-     *
+     * Authenticate user through the API
      */
     public function authenticate()
     {
         $token = $this->getToken();
         $token['created_at'] = time();
 
-        $this->setToken($token);
+        $this->setAccessToken($token);
 
     }
 
     /**
-     * @param $token
+     * Set access token
+     *
+     * @param array $token
      */
-    public function setToken($token)
+    public function setAccessToken($token)
     {
-        $this->session->set($this->session_token_key, $token);
+        return $this->tokenStorage->setAccessToken($token);
     }
 
     /**
@@ -119,7 +114,7 @@ class Client
 
         try {
             $response = $this->client->get($this->token_url, $options);
-        } catch (ClientException $e) {
+        } catch (BadRequestException $e) {
             $response = $e->getResponse();
             $body = $response->json();
 
@@ -146,37 +141,13 @@ class Client
     }
 
     /**
-     * Returns if the access_token is expired.
-     * @return bool Returns True if the access_token is expired.
+     * Returns if the access token is expired.
+     *
+     * @return bool Returns true if the access token is expired.
      */
     public function isAccessTokenExpired()
     {
-        $tokenKey = $this->session_token_key;
-
-        if (! $this->session->get($tokenKey) || ! is_array($this->session->get($tokenKey))) {
-            return true;
-        }
-
-        $token = $this->session->get($tokenKey);
-
-        if (!isset($token['token_type'])) {
-            return true;
-        }
-
-        if (!isset($token['expires_in'])) {
-            return true;
-        }
-
-        if (!isset($token['access_token'])) {
-            return true;
-        }
-
-        if (!isset($token['created_at'])) {
-            return true;
-        }
-
-        // If the token is set to expire in the next 30 seconds.
-        return ($token['created_at'] + ($token['expires_in'] - 30)) < time();
+        return $this->tokenStorage->isAccessTokenExpired();
     }
 
     /**
@@ -192,14 +163,7 @@ class Client
      */
     public function getAccessToken()
     {
-        $tokenKey = $this->session_token_key;
-        $token = $this->session->get($tokenKey);
-
-        if (null === $token['access_token']) {
-            throw new \LogicException('There is no access token');
-        }
-
-        return $token['access_token'];
+        return $this->tokenStorage->getAccessToken();
     }
 
     /**
@@ -514,8 +478,7 @@ class Client
      */
     private function get($url, array $options = [])
     {
-        $tokenKey = $this->session_token_key;
-        $token = $this->session->get($tokenKey);
+        $token = $this->tokenStorage->getAccessToken();
 
         $requestOptions = [];
 
@@ -555,8 +518,7 @@ class Client
      */
     private function post($url, $version, array $data = [], $bodyEncoding = 'json')
     {
-        $tokenKey = $this->session_token_key;
-        $token = $this->session->get($tokenKey);
+        $token = $this->tokenStorage->getAccessToken();
 
         $requestOptions = [];
 
