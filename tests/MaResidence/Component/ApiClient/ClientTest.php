@@ -11,13 +11,4 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     {
         $this->markTestIncomplete('This test has not been implemented yet.');
     }
-
-    public function testIsAccessTokenExpired()
-    {
-        $tokenStorage = Phake::mock('MaResidence\Component\ApiClient\TokenStorageInterface');
-        Phake::when($tokenStorage)->get("mr_api_client.oauth_token")->thenReturn("WTF");
-
-        $client = new Client($tokenStorage, '', '', '', '', '', '');
-        $this->assertTrue($client->isAccessTokenExpired());
-    }
 }
