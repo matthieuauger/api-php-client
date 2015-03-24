@@ -257,6 +257,17 @@ class Client
      *
      * @return mixed
      */
+    public function getHabitationById($id, array $options = [])
+    {
+        return $this->getResourceById('habitations', $id, $options);
+    }
+
+    /**
+     * @param $id
+     * @param array $options
+     *
+     * @return mixed
+     */
     public function getRecommendationById($id, array $options = [])
     {
         return $this->getResourceById('recommendations', $id, $options);
