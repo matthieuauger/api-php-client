@@ -268,7 +268,7 @@ class Client
      *
      * @return mixed
      */
-    public function getHabitationGrouById($id, array $options = [])
+    public function getHabitationGroupById($id, array $options = [])
     {
         return $this->getResourceById('habitationgroups', $id, $options);
     }
