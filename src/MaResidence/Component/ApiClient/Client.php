@@ -2,13 +2,18 @@
 
 namespace MaResidence\Component\ApiClient;
 
-use MaResidence\Component\ApiClient\TokenStorageInterface;
+use Doctrine\Common\Cache\ArrayCache;
+use Doctrine\Common\Cache\Cache;
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Subscriber\Cache\CacheStorage;
+use GuzzleHttp\Subscriber\Cache\CacheStorageInterface;
+use GuzzleHttp\Subscriber\Cache\CacheSubscriber;
 use GuzzleHttp\Client as GuzzleClient;
-use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use MaResidence\Component\ApiClient\Exception\BadRequestException;
 use MaResidence\Component\ApiClient\Exception\InvalidClientException;
 use MaResidence\Component\ApiClient\Exception\UnauthorizedClientException;
+use MaResidence\Component\ApiClient\Storage\InMemoryStorage;
 
 class Client
 {
@@ -16,6 +21,10 @@ class Client
      * @var TokenStorageInterface
      */
     private $tokenStorage;
+    /**
+     * @var CacheStorageInterface
+     */
+    private $cacheStorage;
 
     /**
      * @var GuzzleClient
@@ -33,7 +42,7 @@ class Client
     private $clientSecret;
 
     /**
-     * @var string Your ursername provided by ma-residence.fr
+     * @var string Your username provided by ma-residence.fr
      */
     private $username;
 
@@ -41,6 +50,7 @@ class Client
      * @var string Your password provided by ma-residence.fr
      */
     private $password;
+
 
     /**
      * @var string
@@ -52,105 +62,62 @@ class Client
      */
     private $tokenUrl;
 
-    /**
-     * @param TokenStorageInterface $tokenStorage
-     * @param string           $clientId
-     * @param string           $clientSecret
-     * @param string           $username
-     * @param string           $password
-     * @param string           $endpoint
-     * @param string           $tokenUrl
-     */
-    public function __construct(TokenStorageInterface $tokenStorage, $clientId, $clientSecret, $username, $password, $endpoint, $tokenUrl)
-    {
-        $this->tokenStorage = $tokenStorage;
-        $this->clientId = $clientId;
-        $this->clientSecret = $clientSecret;
-        $this->username = $username;
-        $this->password = $password;
-        $this->endpoint = $endpoint;
-        $this->tokenUrl = $tokenUrl;
-        $this->client = new GuzzleClient(['base_url' => $endpoint]);
-    }
 
+    /**
+     * @param array            $options
+     * @param ClientInterface       $httpClient
+     * @param TokenStorageInterface $tokenStorage
+     * @param CacheStorageInterface $cacheStorage
+     */
+    public function __construct(array $options, ClientInterface $httpClient = null, TokenStorageInterface $tokenStorage = null, CacheStorageInterface $cacheStorage = null)
+    {
+        $this->validateOptions($options);
+
+        $this->clientId = $options['client_id'];
+        $this->clientSecret = $options['client_secret'];
+        $this->username = $options['username'];
+        $this->password = $options['password'];
+        $this->endpoint = $options['endpoint'];
+        $this->tokenUrl = $options['token_url'];
+
+        $this->client = $httpClient ?: new GuzzleClient(['base_url' => $this->endpoint]);
+
+        $cacheDriver = new ArrayCache();
+        if (isset($options['cache_driver']) && $options['cache_driver'] instanceof Cache) {
+            $cacheDriver = $options['cache_driver'];
+        }
+        $ttl = array_key_exists('cache_ttl', $options) ? (int) $options['cache_ttl'] : 300;
+
+        $this->cacheStorage = $cacheStorage ?: new CacheStorage($cacheDriver, sprintf('api_client_%', $this->clientId), $ttl);
+
+        // enable cache proxy
+        CacheSubscriber::attach($this->client, [
+            'storage' => $this->cacheStorage ,
+            'validate' => false
+        ]);
+
+        $this->tokenStorage = $tokenStorage ?: new InMemoryStorage();
+    }
     /**
      * Authenticate user through the API
      */
     public function authenticate()
     {
-        $token = $this->getToken();
+        // do not update if token is still valid
+        if ($this->isAuthenticated()) {
+            return;
+        }
+
+        $token = $this->doAuthenticate();
         $token['created_at'] = time();
 
-        $this->setAccessToken($token);
-
+        $this->tokenStorage->setAccessToken($token);
     }
 
-    /**
-     * Set access token
-     *
-     * @param array $token
-     */
-    public function setAccessToken($token)
+    public function isAuthenticated()
     {
-        return $this->tokenStorage->setAccessToken($token);
+        return null !== $this->tokenStorage->getAccessToken() && false === $this->tokenStorage->isAccessTokenExpired();
     }
-
-    /**
-     * @return mixed
-     * @throws BadRequestException
-     * @throws InvalidClientException
-     * @throws UnauthorizedClientException
-     */
-    public function getToken()
-    {
-        $options = [
-            'query' => [
-                'client_id' => $this->clientId,
-                'client_secret' => $this->clientSecret,
-                'grant_type' => 'password',
-                'username' => $this->username,
-                'password' => $this->password,
-            ]
-        ];
-
-        try {
-            $response = $this->client->get($this->tokenUrl, $options);
-        } catch (BadRequestException $e) {
-            $response = $e->getResponse();
-            $body = $response->json();
-
-            if (array_key_exists('error', $body) && $body['error'] == 'invalid_client') {
-                $message = array_key_exists('error_description', $body) ? $body['error_description'] : 'Error description not available';
-
-                throw new InvalidClientException($message, $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl(), $body);
-            }
-
-            if (array_key_exists('error', $body) && $body['error'] == 'unauthorized_client') {
-                $message = array_key_exists('error_description', $body) ? $body['error_description'] : 'Error description not available';
-
-                throw new UnauthorizedClientException($message, $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl(), $body);
-            }
-
-            throw new BadRequestException($e->getMessage(), $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl(), $body);
-        }
-
-        if (200 !== $response->getStatusCode()) {
-            throw new BadRequestException('An error occurred when trying to GET token data from MR API', $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl());
-        }
-
-        return $response->json();
-    }
-
-    /**
-     * Returns if the access token is expired.
-     *
-     * @return bool Returns true if the access token is expired.
-     */
-    public function isAccessTokenExpired()
-    {
-        return $this->tokenStorage->isAccessTokenExpired();
-    }
-
     /**
      * @return string
      */
@@ -160,128 +127,131 @@ class Client
     }
 
     /**
-     * @return mixed
-     */
-    public function getAccessToken()
-    {
-        return $this->tokenStorage->getAccessToken();
-    }
-
-    /**
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    public function getNews(array $options = [])
+    public function getNews(array $options = [], $forceReValidation = false)
     {
-        return $this->getResources('news', $options);
+        return $this->getResources('news', $options, $forceReValidation);
     }
 
     /**
      * @param $id
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    public function getNewsById($id, array $options = [])
+    public function getNewsById($id, array $options = [], $forceReValidation = false)
     {
-        return $this->getResourceById('news', $id, $options);
+        return $this->getResourceById('news', $id, $options, $forceReValidation);
     }
 
     /**
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    public function getAdverts(array $options = [])
+    public function getAdverts(array $options = [], $forceReValidation = false)
     {
-        return $this->getResources('adverts', $options);
-    }
-
-    /**
-     * @param $id
-     * @param array $options
-     *
-     * @return mixed
-     */
-    public function getAdvertById($id, array $options = [])
-    {
-        return $this->getResourceById('adverts', $id, $options);
-    }
-
-    /**
-     * @param array $options
-     *
-     * @return mixed
-     */
-    public function getAdvertCategories(array $options = [])
-    {
-        return $this->getResources('advertcategories', $options);
+        return $this->getResources('adverts', $options, $forceReValidation);
     }
 
     /**
      * @param $id
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    public function getAdvertCategoryById($id, array $options = [])
+    public function getAdvertById($id, array $options = [], $forceReValidation = false)
     {
-        return $this->getResourceById('advertcategories', $id, $options);
+        return $this->getResourceById('adverts', $id, $options, $forceReValidation);
     }
 
     /**
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    public function getEvents(array $options = [])
+    public function getAdvertCategories(array $options = [], $forceReValidation = false)
     {
-        return $this->getResources('events', $options);
-    }
-
-    /**
-     * @param $id
-     * @param array $options
-     *
-     * @return mixed
-     */
-    public function getEventById($id, array $options = [])
-    {
-        return $this->getResourceById('events', $id, $options);
+        return $this->getResources('advertcategories', $options, $forceReValidation);
     }
 
     /**
      * @param $id
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    public function getHabitationById($id, array $options = [])
+    public function getAdvertCategoryById($id, array $options = [], $forceReValidation = false)
     {
-        return $this->getResourceById('habitations', $id, $options);
+        return $this->getResourceById('advertcategories', $id, $options, $forceReValidation);
+    }
+
+    /**
+     * @param array $options
+     * @param bool $forceReValidation
+     *
+     * @return mixed
+     */
+    public function getEvents(array $options = [], $forceReValidation = false)
+    {
+        return $this->getResources('events', $options, $forceReValidation);
     }
 
     /**
      * @param $id
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    public function getHabitationGroupById($id, array $options = [])
+    public function getEventById($id, array $options = [], $forceReValidation = false)
     {
-        return $this->getResourceById('habitationgroups', $id, $options);
+        return $this->getResourceById('events', $id, $options, $forceReValidation);
     }
 
     /**
      * @param $id
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    public function getRecommendationById($id, array $options = [])
+    public function getHabitationById($id, array $options = [], $forceReValidation = false)
     {
-        return $this->getResourceById('recommendations', $id, $options);
+        return $this->getResourceById('habitations', $id, $options, $forceReValidation);
+    }
+
+    /**
+     * @param $id
+     * @param array $options
+     * @param bool $forceReValidation
+     *
+     * @return mixed
+     */
+    public function getHabitationGroupById($id, array $options = [], $forceReValidation = false)
+    {
+        return $this->getResourceById('habitationgroups', $id, $options, $forceReValidation);
+    }
+
+    /**
+     * @param $id
+     * @param array $options
+     * @param bool $forceReValidation
+     *
+     * @return mixed
+     */
+    public function getRecommendationById($id, array $options = [], $forceReValidation = false)
+    {
+        return $this->getResourceById('recommendations', $id, $options, $forceReValidation);
     }
 
     /**
@@ -423,90 +393,98 @@ class Client
     /**
      * @param $id
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    public function getUserById($id, array $options = [])
+    public function getUserById($id, array $options = [], $forceReValidation = false)
     {
-        return $this->getResourceById('users', $id, $options);
+        return $this->getResourceById('users', $id, $options, $forceReValidation);
     }
 
     /**
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    public function getAssociations(array $options = [])
+    public function getAssociations(array $options = [], $forceReValidation = false)
     {
-        return $this->getResources('associations', $options);
-    }
-
-    /**
-     * @param $id
-     * @param array $options
-     *
-     * @return mixed
-     */
-    public function getAssociationById($id, array $options = [])
-    {
-        return $this->getResourceById('associations', $id, $options);
-    }
-
-    /**
-     * @param array $options
-     *
-     * @return mixed
-     */
-    public function getShops(array $options = [])
-    {
-        return $this->getResources('shops', $options);
+        return $this->getResources('associations', $options, $forceReValidation);
     }
 
     /**
      * @param $id
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    public function getShopById($id, array $options = [])
+    public function getAssociationById($id, array $options = [], $forceReValidation = false)
     {
-        return $this->getResourceById('shops', $id, $options);
+        return $this->getResourceById('associations', $id, $options, $forceReValidation);
+    }
+
+    /**
+     * @param array $options
+     * @param bool $forceReValidation
+     *
+     * @return mixed
+     */
+    public function getShops(array $options = [], $forceReValidation = false)
+    {
+        return $this->getResources('shops', $options, $forceReValidation);
+    }
+
+    /**
+     * @param $id
+     * @param array $options
+     * @param bool $forceReValidation
+     *
+     * @return mixed
+     */
+    public function getShopById($id, array $options = [], $forceReValidation = false)
+    {
+        return $this->getResourceById('shops', $id, $options, $forceReValidation);
     }
 
     /**
      * @param $resource
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    private function getResources($resource, array $options = [])
+    private function getResources($resource, array $options = [], $forceReValidation = false)
     {
         $url = sprintf('/api/%s', $resource);
 
-        return $this->get($url, $options);
+        return $this->get($url, $options, $forceReValidation);
     }
 
     /**
      * @param $resource
      * @param $id
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return mixed
      */
-    private function getResourceById($resource, $id, array $options = [])
+    private function getResourceById($resource, $id, array $options = [], $forceReValidation = false)
     {
         $url = sprintf('/api/%s/%s', $resource, $id);
 
-        return $this->get($url, $options);
+        return $this->get($url, $options, $forceReValidation);
     }
 
     /**
      * @param $url
      * @param array $options
+     * @param bool $forceReValidation
      *
      * @return array
      */
-    private function get($url, array $options = [])
+    private function get($url, array $options = [], $forceReValidation = false)
     {
         $token = $this->tokenStorage->getAccessToken();
 
@@ -523,6 +501,8 @@ class Client
         }
 
         $requestOptions['query']['access_token'] = $token['access_token'];
+
+        $options['config']['cache.disable'] = $forceReValidation;
 
         $response = $this->client->get($url, $requestOptions);
 
@@ -572,5 +552,60 @@ class Client
         }
 
         return $response;
+    }
+
+    private function validateOptions(array $options)
+    {
+        foreach (['client_id', 'client_secret', 'username', 'password', 'endpoint', 'token_url'] as $optionName) {
+            if (!array_key_exists($optionName, $options)) {
+                throw new \InvalidArgumentException(sptinf('Missing mandatory "%s" option', $optionName));
+            }
+        }
+    }
+
+    /**
+     * @return mixed
+     * @throws BadRequestException
+     * @throws InvalidClientException
+     * @throws UnauthorizedClientException
+     */
+    private function doAuthenticate()
+    {
+        $options = [
+            'query' => [
+                'client_id' => $this->clientId,
+                'client_secret' => $this->clientSecret,
+                'grant_type' => 'password',
+                'username' => $this->username,
+                'password' => $this->password,
+            ]
+        ];
+
+        try {
+            $response = $this->client->get($this->tokenUrl, $options);
+        } catch (BadRequestException $e) {
+            $response = $e->getResponse();
+            $body = $response->json();
+
+            if (array_key_exists('error', $body) && $body['error'] == 'invalid_client') {
+                $message = array_key_exists('error_description', $body) ? $body['error_description'] : 'Error description not available';
+
+                throw new InvalidClientException($message, $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl(), $body);
+            }
+
+            if (array_key_exists('error', $body) && $body['error'] == 'unauthorized_client') {
+                $message = array_key_exists('error_description', $body) ? $body['error_description'] : 'Error description not available';
+
+                throw new UnauthorizedClientException($message, $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl(), $body);
+            }
+
+            throw new BadRequestException($e->getMessage(), $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl(), $body);
+        }
+
+        if (200 !== $response->getStatusCode()) {
+            throw new BadRequestException('An error occurred when trying to GET token data from MR API', $response->getReasonPhrase(), $response->getStatusCode(), $response->getEffectiveUrl());
+        }
+
+        return $response->json();
     }
 }
