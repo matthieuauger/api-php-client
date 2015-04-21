@@ -14,9 +14,18 @@ See `composer.json` file.
     use Symfony\Component\HttpFoundation\Session\Session;
     use MaResidence\Component\ApiClient\Client;
 
-    $client = new Client(SessionInterface $session, $clientId, $clientSecret, $username, $password, 'https://www.ma-residence.fr/api/', 'https://www.ma-residence.fr/oauth/v2/apitoken');
+    $options = [
+        'client_id' => CLIENT_ID,
+        'client_secret' => CLIENT_SECRET,
+        'username' => USERNAME,
+        'password' => PASSWORD,
+        'endpoint' => 'https://www.ma-residence.fr/api/'
+        'token_url' => 'https://www.ma-residence.fr/oauth/v2/apitoken'
+    ];
+    
+    $client = new Client($options);
 
-    if ($client->isAccessTokenExpired()) {
+    if (false === $client->isAuthenticated()) {
         $client->authenticate();
     }
 
