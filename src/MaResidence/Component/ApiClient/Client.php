@@ -269,6 +269,7 @@ class Client
     public function postUser(array $userData, $version)
     {
         $data['user'] = $userData;
+        $body = null;
 
         try {
             $response = $this->post('/api/users', $version, $data);
@@ -502,7 +503,7 @@ class Client
 
         $requestOptions['query']['access_token'] = $token['access_token'];
 
-        $options['config']['cache.disable'] = $forceReValidation;
+        $requestOptions['config']['cache.disable'] = $forceReValidation;
 
         $response = $this->client->get($url, $requestOptions);
 
@@ -558,7 +559,7 @@ class Client
     {
         foreach (['client_id', 'client_secret', 'username', 'password', 'endpoint', 'token_url'] as $optionName) {
             if (!array_key_exists($optionName, $options)) {
-                throw new \InvalidArgumentException(sptinf('Missing mandatory "%s" option', $optionName));
+                throw new \InvalidArgumentException(sprintf('Missing mandatory "%s" option', $optionName));
             }
         }
     }
