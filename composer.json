@@ -2,14 +2,14 @@
     "name": "ma-residence/mr-api-php-client",
     "type": "library",
     "description": "Client library for ma-residence API",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "keywords": ["ma-residence, maresidence"],
     "homepage": "http://www.ma-residence.fr",
     "license": "Apache-2.0",
     "require": {
         "php": ">=5.5",
         "guzzlehttp/guzzle": "~5.0",
-        "guzzlehttp/cache-subscriber": "dev-master",
+        "guzzlehttp/cache-subscriber": "0.2.*@dev",
         "symfony/http-foundation": "~2.3"
     },
     "require-dev": {
