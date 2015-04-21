@@ -2,7 +2,7 @@
     "name": "ma-residence/mr-api-php-client",
     "type": "library",
     "description": "Client library for ma-residence API",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "keywords": ["ma-residence, maresidence"],
     "homepage": "http://www.ma-residence.fr",
     "license": "Apache-2.0",
