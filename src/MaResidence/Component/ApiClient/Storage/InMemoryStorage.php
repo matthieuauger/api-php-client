@@ -14,7 +14,7 @@ class InMemoryStorage implements TokenStorageInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getAccessToken()
     {
@@ -22,7 +22,7 @@ class InMemoryStorage implements TokenStorageInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function setAccessToken($token)
     {
@@ -30,17 +30,25 @@ class InMemoryStorage implements TokenStorageInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function isAccessTokenExpired()
     {
         $token = $this->getAccessToken();
 
-        if (isset($token['created_at']) && $token['expires_in']) {
-            return ($token['created_at'] + $token['expires_in']) < time();
+        if (null === $token) {
+            return true;
         }
 
-        return true;
-    }
+        if (!isset($token['created_at']) || !isset($token['expires_in'])) {
+            return true;
+        }
 
+        $expirationTime = $token['created_at'] + $token['expires_in'];
+        if ($expirationTime < time()) {
+            return true;
+        }
+
+        return false;
+    }
 }

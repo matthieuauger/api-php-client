@@ -54,7 +54,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         // save method should be call once
         $cacheDriver =  $this->getMockBuilder('Doctrine\Common\Cache\Cache')->getMock();
         $cacheDriver->expects($this->any())->method('save');
-        $cacheDriver->expects($this->once())->method('fetch');
+        $cacheDriver->expects($this->any())->method('fetch');
 
         $options = $this->getClientOptions();
 
