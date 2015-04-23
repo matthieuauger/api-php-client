@@ -116,7 +116,7 @@ class Client
 
     public function isAuthenticated()
     {
-        return null !== $this->tokenStorage->getAccessToken() && false === $this->tokenStorage->isAccessTokenExpired();
+        return false === $this->tokenStorage->isAccessTokenExpired();
     }
     /**
      * @return string
