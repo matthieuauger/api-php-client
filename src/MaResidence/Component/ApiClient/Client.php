@@ -118,6 +118,15 @@ class Client
     {
         return false === $this->tokenStorage->isAccessTokenExpired();
     }
+
+    /**
+     * @return array
+     */
+    public function getAccessToken()
+    {
+        return $this->tokenStorage->getAccessToken();
+    }
+
     /**
      * @return string
      */
