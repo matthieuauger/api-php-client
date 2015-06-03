@@ -576,9 +576,9 @@ class Client
             'query' => [
                 'client_id' => $this->clientId,
                 'client_secret' => $this->clientSecret,
-                'grant_type' => 'password',
-                'username' => $this->username,
-                'password' => $this->password,
+                'grant_type' => 'client_credentials',
+//                'username' => $this->username,
+//                'password' => $this->password,
             ]
         ];
 
