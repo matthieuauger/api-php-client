@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "07129719069f00abe6d9b63a03948c21",
+    "hash": "aa77970d17ddc304f2a0337c6e669287",
     "packages": [
         {
             "name": "doctrine/cache",
@@ -389,16 +389,16 @@
     "packages-dev": [
         {
             "name": "phake/phake",
-            "version": "2.0.x-dev",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mlively/Phake.git",
-                "reference": "15d688aa23e6d5db433accb75feea6c0a1cdd1f1"
+                "reference": "0fbfb043949d31cb8e8c5160638c4e0320410b0b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mlively/Phake/zipball/15d688aa23e6d5db433accb75feea6c0a1cdd1f1",
-                "reference": "15d688aa23e6d5db433accb75feea6c0a1cdd1f1",
+                "url": "https://api.github.com/repos/mlively/Phake/zipball/0fbfb043949d31cb8e8c5160638c4e0320410b0b",
+                "reference": "0fbfb043949d31cb8e8c5160638c4e0320410b0b",
                 "shasum": ""
             },
             "require": {
@@ -441,7 +441,7 @@
                 "mock",
                 "testing"
             ],
-            "time": "2015-03-21 18:05:30"
+            "time": "2014-10-16 16:13:17"
         },
         {
             "name": "phpunit/php-code-coverage",
