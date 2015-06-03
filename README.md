@@ -20,7 +20,7 @@ See `composer.json` file.
         'username' => USERNAME,
         'password' => PASSWORD,
         'endpoint' => 'https://www.ma-residence.fr/api/'
-        'token_url' => 'https://www.ma-residence.fr/oauth/v2/apitoken'
+        'token_url' => 'https://www.ma-residence.fr/oauth/v2/token'
     ];
     
     $client = new Client($options);
