@@ -548,6 +548,7 @@ class Client
 
         // Encode the body to be fully compatible with REST
         if ('json' == $bodyEncoding) {
+            $requestOptions['headers']['Content-type'] = 'application/json';
             $requestOptions['body'] = json_encode($requestOptions['body']);
         }
 
